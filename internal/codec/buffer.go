@@ -49,8 +49,12 @@ func (cb *Buffer) IsDeterministic() bool {
 // Reset resets this buffer back to empty. Any subsequent writes/encodes
 // to the buffer will allocate a new backing slice of bytes.
 func (cb *Buffer) Reset() {
-	cb.buf = []byte(nil)
+	cb.buf = cb.buf[:0]
 	cb.index = 0
+}
+
+func (cb *Buffer) SetBuf(buf []byte) {
+	cb.buf = buf
 }
 
 // Bytes returns the slice of bytes remaining in the buffer. Note that

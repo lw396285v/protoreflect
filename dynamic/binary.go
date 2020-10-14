@@ -7,6 +7,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/codec"
 	"io"
+	"math"
+	"sync"
 )
 
 // defaultDeterminism, if true, will mean that calls to Marshal will produce
@@ -18,12 +20,19 @@ var defaultDeterminism = false
 // Marshal serializes this message to bytes, returning an error if the operation
 // fails. The resulting bytes are in the standard protocol buffer binary format.
 func (m *Message) Marshal() ([]byte, error) {
-	var b codec.Buffer
-	b.SetDeterministic(defaultDeterminism)
-	if err := m.marshal(&b); err != nil {
+	cb := protoBufferPool.Get().(*cachedProtoBuffer)
+
+	newSlice := make([]byte, 0, cb.lastMarshaledSize)
+	cb.SetBuf(newSlice)
+
+	if err := m.marshal(&cb.Buffer); err != nil {
 		return nil, err
 	}
-	return b.Bytes(), nil
+	out := cb.Bytes()
+	cb.lastMarshaledSize = capToMaxInt32(len(out))
+	cb.SetBuf(nil)
+	protoBufferPool.Put(cb)
+	return out, nil
 }
 
 // MarshalAppend behaves exactly the same as Marshal, except instead of allocating a
@@ -182,4 +191,27 @@ func (m *Message) unmarshal(buf *codec.Buffer, isGroup bool) error {
 		return io.ErrUnexpectedEOF
 	}
 	return nil
+}
+
+func capToMaxInt32(val int) uint32 {
+	if val > math.MaxInt32 {
+		return uint32(math.MaxInt32)
+	}
+	return uint32(val)
+}
+
+type cachedProtoBuffer struct {
+	lastMarshaledSize uint32
+	codec.Buffer
+}
+
+var protoBufferPool = &sync.Pool{
+	New: func() interface{} {
+		cb := &cachedProtoBuffer{
+			Buffer:            codec.Buffer{},
+			lastMarshaledSize: 128,
+		}
+		cb.SetDeterministic(defaultDeterminism)
+		return cb
+	},
 }
