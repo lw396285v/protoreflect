@@ -32,7 +32,7 @@ func (cb *Buffer) EncodeFieldValue(fd *desc.FieldDescriptor, val interface{}) er
 		entryType := fd.GetMessageType()
 		keyType := entryType.FindFieldByNumber(1)
 		valType := entryType.FindFieldByNumber(2)
-		var entryBuffer Buffer
+		var entryBuffer = NewBuffer(make([]byte, 16))
 		if cb.IsDeterministic() {
 			keys := make([]interface{}, 0, len(mp))
 			for k := range mp {
@@ -88,7 +88,7 @@ func (cb *Buffer) EncodeFieldValue(fd *desc.FieldDescriptor, val interface{}) er
 		if isPacked(fd) && len(sl) > 0 &&
 			(wt == proto.WireVarint || wt == proto.WireFixed32 || wt == proto.WireFixed64) {
 			// packed repeated field
-			var packedBuffer Buffer
+			var packedBuffer = NewBuffer(make([]byte, 16))
 			for _, v := range sl {
 				if err := packedBuffer.encodeFieldValue(fd, v); err != nil {
 					return err
