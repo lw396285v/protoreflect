@@ -29,9 +29,11 @@ func (m *Message) Marshal() ([]byte, error) {
 		return nil, err
 	}
 	out := cb.Bytes()
+
 	cb.lastMarshaledSize = capToMaxInt32(len(out))
 	cb.SetBuf(nil)
 	protoBufferPool.Put(cb)
+
 	return out, nil
 }
 
@@ -56,12 +58,25 @@ func (m *Message) MarshalAppend(b []byte) ([]byte, error) {
 // iteration order (which will be random). But for cases where determinism is
 // more important than performance, use this method instead.
 func (m *Message) MarshalDeterministic() ([]byte, error) {
-	var b codec.Buffer
-	b.SetDeterministic(true)
-	if err := m.marshal(&b); err != nil {
+	cb := protoBufferPool.Get().(*cachedProtoBuffer)
+
+	newSlice := make([]byte, 0, cb.lastMarshaledSize)
+	cb.SetBuf(newSlice)
+	cb.SetDeterministic(true)
+
+	if err := m.marshal(&cb.Buffer); err != nil {
 		return nil, err
 	}
-	return b.Bytes(), nil
+
+	out := cb.Bytes()
+
+	cb.lastMarshaledSize = capToMaxInt32(len(out))
+	cb.SetBuf(nil)
+	cb.SetDeterministic(defaultDeterminism)
+
+	protoBufferPool.Put(cb)
+
+	return out, nil
 }
 
 // MarshalAppendDeterministic behaves exactly the same as MarshalDeterministic,
