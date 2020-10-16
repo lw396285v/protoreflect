@@ -7,8 +7,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/codec"
 	"io"
-	"math"
-	"sync"
 )
 
 // defaultDeterminism, if true, will mean that calls to Marshal will produce
@@ -20,21 +18,14 @@ var defaultDeterminism = false
 // Marshal serializes this message to bytes, returning an error if the operation
 // fails. The resulting bytes are in the standard protocol buffer binary format.
 func (m *Message) Marshal() ([]byte, error) {
-	cb := protoBufferPool.Get().(*cachedProtoBuffer)
+	b := codec.NewBuffer(make([]byte, 0, 2048))
+	b.SetDeterministic(defaultDeterminism)
 
-	newSlice := make([]byte, 0, cb.lastMarshaledSize)
-	cb.SetBuf(newSlice)
-
-	if err := m.marshal(&cb.Buffer); err != nil {
+	if err := m.marshal(b); err != nil {
 		return nil, err
 	}
-	out := cb.Bytes()
 
-	cb.lastMarshaledSize = capToMaxInt32(len(out))
-	cb.SetBuf(nil)
-	protoBufferPool.Put(cb)
-
-	return out, nil
+	return b.Bytes(), nil
 }
 
 // MarshalAppend behaves exactly the same as Marshal, except instead of allocating a
@@ -45,6 +36,7 @@ func (m *Message) Marshal() ([]byte, error) {
 func (m *Message) MarshalAppend(b []byte) ([]byte, error) {
 	codedBuf := codec.NewBuffer(b)
 	codedBuf.SetDeterministic(defaultDeterminism)
+
 	if err := m.marshal(codedBuf); err != nil {
 		return nil, err
 	}
@@ -58,25 +50,14 @@ func (m *Message) MarshalAppend(b []byte) ([]byte, error) {
 // iteration order (which will be random). But for cases where determinism is
 // more important than performance, use this method instead.
 func (m *Message) MarshalDeterministic() ([]byte, error) {
-	cb := protoBufferPool.Get().(*cachedProtoBuffer)
+	b := codec.NewBuffer(make([]byte, 0, 2048))
+	b.SetDeterministic(true)
 
-	newSlice := make([]byte, 0, cb.lastMarshaledSize)
-	cb.SetBuf(newSlice)
-	cb.SetDeterministic(true)
-
-	if err := m.marshal(&cb.Buffer); err != nil {
+	if err := m.marshal(b); err != nil {
 		return nil, err
 	}
 
-	out := cb.Bytes()
-
-	cb.lastMarshaledSize = capToMaxInt32(len(out))
-	cb.SetBuf(nil)
-	cb.SetDeterministic(defaultDeterminism)
-
-	protoBufferPool.Put(cb)
-
-	return out, nil
+	return b.Bytes(), nil
 }
 
 // MarshalAppendDeterministic behaves exactly the same as MarshalDeterministic,
@@ -206,27 +187,4 @@ func (m *Message) unmarshal(buf *codec.Buffer, isGroup bool) error {
 		return io.ErrUnexpectedEOF
 	}
 	return nil
-}
-
-func capToMaxInt32(val int) uint32 {
-	if val > math.MaxInt32 {
-		return uint32(math.MaxInt32)
-	}
-	return uint32(val)
-}
-
-type cachedProtoBuffer struct {
-	lastMarshaledSize uint32
-	codec.Buffer
-}
-
-var protoBufferPool = &sync.Pool{
-	New: func() interface{} {
-		cb := &cachedProtoBuffer{
-			Buffer:            codec.Buffer{},
-			lastMarshaledSize: 128,
-		}
-		cb.SetDeterministic(defaultDeterminism)
-		return cb
-	},
 }

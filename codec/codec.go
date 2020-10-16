@@ -54,10 +54,6 @@ func (cb *Buffer) Reset() {
 	(*codec.Buffer)(cb).Reset()
 }
 
-func (cb *Buffer) SetBuf(buf []byte) {
-	(*codec.Buffer)(cb).SetBuf(buf)
-}
-
 // Bytes returns the slice of bytes remaining in the buffer. Note that
 // this does not perform a copy: if the contents of the returned slice
 // are modified, the modifications will be visible to subsequent reads
