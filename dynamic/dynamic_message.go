@@ -1924,20 +1924,20 @@ func validElementFieldValueForRv(fd *desc.FieldDescriptor, val reflect.Value, al
 		if err != nil {
 			return nil, err
 		}
-		var msgType string
-		if dm, ok := m.(*Message); ok {
-			if allowNilMessage && dm == nil {
-				// if dm == nil, we'll panic below, so early out if that is allowed
-				// (only allowed for map values, to indicate an entry w/ no value)
-				return m, nil
-			}
-			msgType = dm.GetMessageDescriptor().GetFullyQualifiedName()
-		} else {
-			msgType = proto.MessageName(m)
-		}
-		if msgType != fd.GetMessageType().GetFullyQualifiedName() {
-			return nil, fmt.Errorf("message field %s requires value of type %s; received %s", fd.GetFullyQualifiedName(), fd.GetMessageType().GetFullyQualifiedName(), msgType)
-		}
+		//var msgType string
+		//if dm, ok := m.(*Message); ok {
+		//	if allowNilMessage && dm == nil {
+		//		// if dm == nil, we'll panic below, so early out if that is allowed
+		//		// (only allowed for map values, to indicate an entry w/ no value)
+		//		return m, nil
+		//	}
+		//	msgType = dm.GetMessageDescriptor().GetFullyQualifiedName()
+		//} else {
+		//	msgType = proto.MessageName(m)
+		//}
+		//if msgType != fd.GetMessageType().GetFullyQualifiedName() {
+		//	return nil, fmt.Errorf("message field %s requires value of type %s; received %s", fd.GetFullyQualifiedName(), fd.GetMessageType().GetFullyQualifiedName(), msgType)
+		//}
 		return m, nil
 
 	default:
