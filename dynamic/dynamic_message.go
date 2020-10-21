@@ -1919,11 +1919,12 @@ func validElementFieldValueForRv(fd *desc.FieldDescriptor, val reflect.Value, al
 
 	case descriptor.FieldDescriptorProto_TYPE_MESSAGE,
 		descriptor.FieldDescriptorProto_TYPE_GROUP:
-		m, err := asMessage(val, fd.GetFullyQualifiedName())
-		// check that message is correct type
-		if err != nil {
-			return nil, err
-		}
+		return val.Interface().(proto.Message), nil
+		//m, err := asMessage(val, fd.GetFullyQualifiedName())
+		//// check that message is correct type
+		//if err != nil {
+		//	return nil, err
+		//}
 		//var msgType string
 		//if dm, ok := m.(*Message); ok {
 		//	if allowNilMessage && dm == nil {
@@ -1938,7 +1939,7 @@ func validElementFieldValueForRv(fd *desc.FieldDescriptor, val reflect.Value, al
 		//if msgType != fd.GetMessageType().GetFullyQualifiedName() {
 		//	return nil, fmt.Errorf("message field %s requires value of type %s; received %s", fd.GetFullyQualifiedName(), fd.GetMessageType().GetFullyQualifiedName(), msgType)
 		//}
-		return m, nil
+		//return m, nil
 
 	default:
 		return nil, fmt.Errorf("unable to handle unrecognized field type: %v", fd.GetType())
