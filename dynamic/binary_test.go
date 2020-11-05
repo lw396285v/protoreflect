@@ -1,16 +1,24 @@
 package dynamic
 
 import (
+	"fmt"
+	"github.com/golang/protobuf/proto"
 	"reflect"
 	"testing"
-
-	"github.com/golang/protobuf/proto"
 
 	"github.com/jhump/protoreflect/codec"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/internal/testprotos"
 	"github.com/jhump/protoreflect/internal/testutil"
 )
+
+func TestA(t *testing.T) {
+	var a interface{}
+	var b = []interface{}{1,2,3}
+	a = b
+	c := reflect.ValueOf(a)
+	fmt.Println(c.Index(1))
+}
 
 func TestBinaryUnaryFields(t *testing.T) {
 	binaryTranslationParty(t, unaryFieldsPosMsg, false)
