@@ -18,9 +18,9 @@ var defaultDeterminism = false
 // Marshal serializes this message to bytes, returning an error if the operation
 // fails. The resulting bytes are in the standard protocol buffer binary format.
 func (m *Message) Marshal() ([]byte, error) {
-	var b codec.Buffer
+	b := codec.NewBuffer(make([]byte, 0, 2048))
 	b.SetDeterministic(defaultDeterminism)
-	if err := m.marshal(&b); err != nil {
+	if err := m.marshal(b); err != nil {
 		return nil, err
 	}
 	return b.Bytes(), nil
@@ -47,9 +47,9 @@ func (m *Message) MarshalAppend(b []byte) ([]byte, error) {
 // iteration order (which will be random). But for cases where determinism is
 // more important than performance, use this method instead.
 func (m *Message) MarshalDeterministic() ([]byte, error) {
-	var b codec.Buffer
+	b := codec.NewBuffer(make([]byte, 0, 2048))
 	b.SetDeterministic(true)
-	if err := m.marshal(&b); err != nil {
+	if err := m.marshal(b); err != nil {
 		return nil, err
 	}
 	return b.Bytes(), nil

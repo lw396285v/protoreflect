@@ -32,7 +32,7 @@ func (cb *Buffer) EncodeFieldValue(fd *desc.FieldDescriptor, val interface{}) er
 		entryType := fd.GetMessageType()
 		keyType := entryType.FindFieldByNumber(1)
 		valType := entryType.FindFieldByNumber(2)
-		var entryBuffer Buffer
+		var entryBuffer = NewBuffer(make([]byte, 0, 16))
 		if cb.IsDeterministic() {
 			entryBuffer.SetDeterministic(true)
 			keys := make([]interface{}, 0, len(mp))
