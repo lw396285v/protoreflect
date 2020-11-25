@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"reflect"
 	"sort"
 	"strings"
@@ -1838,71 +1839,68 @@ func (m *Message) parseUnknownField(fd *desc.FieldDescriptor) (interface{}, erro
 
 func validFieldValue(fd *desc.FieldDescriptor, val interface{}) (interface{}, error) {
 	return val, nil
-	// todo unsafe mark
-	//return validFieldValueForRv(fd, reflect.ValueOf(val))
+	return validFieldValueForRv(fd, reflect.ValueOf(val))
 }
 
 func validFieldValueForRv(fd *desc.FieldDescriptor, val reflect.Value) (interface{}, error) {
-	return val, nil
-	// todo unsafe mark
-	//if fd.IsMap() && val.Kind() == reflect.Map {
-	//	return validFieldValueForMapField(fd, val)
-	//}
-	//
-	//if fd.IsRepeated() { // this will also catch map fields where given value was not a map
-	//	if val.Kind() != reflect.Array && val.Kind() != reflect.Slice {
-	//		if fd.IsMap() {
-	//			return nil, fmt.Errorf("value for map field must be a map; instead was %v", val.Type())
-	//		} else {
-	//			return nil, fmt.Errorf("value for repeated field must be a slice; instead was %v", val.Type())
-	//		}
-	//	}
-	//
-	//	if fd.IsMap() {
-	//		// value should be a slice of entry messages that we need convert into a map[interface{}]interface{}
-	//		m := map[interface{}]interface{}{}
-	//		for i := 0; i < val.Len(); i++ {
-	//			e, err := validElementFieldValue(fd, val.Index(i).Interface(), false)
-	//			if err != nil {
-	//				return nil, err
-	//			}
-	//			msg := e.(proto.Message)
-	//			dm, err := asDynamicMessage(msg, fd.GetMessageType(), nil)
-	//			if err != nil {
-	//				return nil, err
-	//			}
-	//			k, err := dm.TryGetFieldByNumber(1)
-	//			if err != nil {
-	//				return nil, err
-	//			}
-	//			v, err := dm.TryGetFieldByNumber(2)
-	//			if err != nil {
-	//				return nil, err
-	//			}
-	//			m[k] = v
-	//		}
-	//		return m, nil
-	//	}
-	//
-	//	// make a defensive copy while checking contents (also converts to []interface{})
-	//	s := make([]interface{}, val.Len())
-	//	for i := 0; i < val.Len(); i++ {
-	//		ev := val.Index(i)
-	//		if ev.Kind() == reflect.Interface {
-	//			// unwrap it
-	//			ev = reflect.ValueOf(ev.Interface())
-	//		}
-	//		e, err := validElementFieldValueForRv(fd, ev, false)
-	//		if err != nil {
-	//			return nil, err
-	//		}
-	//		s[i] = e
-	//	}
-	//
-	//	return s, nil
-	//}
-	//
-	//return validElementFieldValueForRv(fd, val, false)
+	if fd.IsMap() && val.Kind() == reflect.Map {
+		return validFieldValueForMapField(fd, val)
+	}
+
+	if fd.IsRepeated() { // this will also catch map fields where given value was not a map
+		if val.Kind() != reflect.Array && val.Kind() != reflect.Slice {
+			if fd.IsMap() {
+				return nil, fmt.Errorf("value for map field must be a map; instead was %v", val.Type())
+			} else {
+				return nil, fmt.Errorf("value for repeated field must be a slice; instead was %v", val.Type())
+			}
+		}
+
+		if fd.IsMap() {
+			// value should be a slice of entry messages that we need convert into a map[interface{}]interface{}
+			m := map[interface{}]interface{}{}
+			for i := 0; i < val.Len(); i++ {
+				e, err := validElementFieldValue(fd, val.Index(i).Interface(), false)
+				if err != nil {
+					return nil, err
+				}
+				msg := e.(proto.Message)
+				dm, err := asDynamicMessage(msg, fd.GetMessageType(), nil)
+				if err != nil {
+					return nil, err
+				}
+				k, err := dm.TryGetFieldByNumber(1)
+				if err != nil {
+					return nil, err
+				}
+				v, err := dm.TryGetFieldByNumber(2)
+				if err != nil {
+					return nil, err
+				}
+				m[k] = v
+			}
+			return m, nil
+		}
+
+		// make a defensive copy while checking contents (also converts to []interface{})
+		s := make([]interface{}, val.Len())
+		for i := 0; i < val.Len(); i++ {
+			ev := val.Index(i)
+			if ev.Kind() == reflect.Interface {
+				// unwrap it
+				ev = reflect.ValueOf(ev.Interface())
+			}
+			e, err := validElementFieldValueForRv(fd, ev, false)
+			if err != nil {
+				return nil, err
+			}
+			s[i] = e
+		}
+
+		return s, nil
+	}
+
+	return validElementFieldValueForRv(fd, val, false)
 }
 
 func asDynamicMessage(m proto.Message, md *desc.MessageDescriptor, mf *MessageFactory) (*Message, error) {
@@ -1917,80 +1915,78 @@ func asDynamicMessage(m proto.Message, md *desc.MessageDescriptor, mf *MessageFa
 }
 
 func validElementFieldValue(fd *desc.FieldDescriptor, val interface{}, allowNilMessage bool) (interface{}, error) {
-	return val, nil
-	// todo unsafe mark
-	// return validElementFieldValueForRv(fd, reflect.ValueOf(val), allowNilMessage)
+	return validElementFieldValueForRv(fd, reflect.ValueOf(val), allowNilMessage)
 }
 
 func validElementFieldValueForRv(fd *desc.FieldDescriptor, val reflect.Value, allowNilMessage bool) (interface{}, error) {
-	return val, nil
-	// todo unsafe mark
-	//t := fd.GetType()
-	//if !val.IsValid() {
-	//	return nil, typeError(fd, nil)
-	//}
-	//
-	//switch t {
-	//case descriptor.FieldDescriptorProto_TYPE_SFIXED32,
-	//	descriptor.FieldDescriptorProto_TYPE_INT32,
-	//	descriptor.FieldDescriptorProto_TYPE_SINT32,
-	//	descriptor.FieldDescriptorProto_TYPE_ENUM:
-	//	return toInt32(reflect.Indirect(val), fd)
-	//
-	//case descriptor.FieldDescriptorProto_TYPE_SFIXED64,
-	//	descriptor.FieldDescriptorProto_TYPE_INT64,
-	//	descriptor.FieldDescriptorProto_TYPE_SINT64:
-	//	return toInt64(reflect.Indirect(val), fd)
-	//
-	//case descriptor.FieldDescriptorProto_TYPE_FIXED32,
-	//	descriptor.FieldDescriptorProto_TYPE_UINT32:
-	//	return toUint32(reflect.Indirect(val), fd)
-	//
-	//case descriptor.FieldDescriptorProto_TYPE_FIXED64,
-	//	descriptor.FieldDescriptorProto_TYPE_UINT64:
-	//	return toUint64(reflect.Indirect(val), fd)
-	//
-	//case descriptor.FieldDescriptorProto_TYPE_FLOAT:
-	//	return toFloat32(reflect.Indirect(val), fd)
-	//
-	//case descriptor.FieldDescriptorProto_TYPE_DOUBLE:
-	//	return toFloat64(reflect.Indirect(val), fd)
-	//
-	//case descriptor.FieldDescriptorProto_TYPE_BOOL:
-	//	return toBool(reflect.Indirect(val), fd)
-	//
-	//case descriptor.FieldDescriptorProto_TYPE_BYTES:
-	//	return toBytes(reflect.Indirect(val), fd)
-	//
-	//case descriptor.FieldDescriptorProto_TYPE_STRING:
-	//	return toString(reflect.Indirect(val), fd)
-	//
-	//case descriptor.FieldDescriptorProto_TYPE_MESSAGE,
-	//	descriptor.FieldDescriptorProto_TYPE_GROUP:
-	//	m, err := asMessage(val, fd.GetFullyQualifiedName())
-	//	// check that message is correct type
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	var msgType string
-	//	if dm, ok := m.(*Message); ok {
-	//		if allowNilMessage && dm == nil {
-	//			// if dm == nil, we'll panic below, so early out if that is allowed
-	//			// (only allowed for map values, to indicate an entry w/ no value)
-	//			return m, nil
-	//		}
-	//		msgType = dm.GetMessageDescriptor().GetFullyQualifiedName()
-	//	} else {
-	//		msgType = proto.MessageName(m)
-	//	}
-	//	if msgType != fd.GetMessageType().GetFullyQualifiedName() {
-	//		return nil, fmt.Errorf("message field %s requires value of type %s; received %s", fd.GetFullyQualifiedName(), fd.GetMessageType().GetFullyQualifiedName(), msgType)
-	//	}
-	//	return m, nil
-	//
-	//default:
-	//	return nil, fmt.Errorf("unable to handle unrecognized field type: %v", fd.GetType())
-	//}
+	t := fd.GetType()
+	if !val.IsValid() {
+		return nil, typeError(fd, nil)
+	}
+
+	switch t {
+	case descriptor.FieldDescriptorProto_TYPE_SFIXED32,
+		descriptor.FieldDescriptorProto_TYPE_INT32,
+		descriptor.FieldDescriptorProto_TYPE_SINT32,
+		descriptor.FieldDescriptorProto_TYPE_ENUM:
+		return toInt32(reflect.Indirect(val), fd)
+
+	case descriptor.FieldDescriptorProto_TYPE_SFIXED64,
+		descriptor.FieldDescriptorProto_TYPE_INT64,
+		descriptor.FieldDescriptorProto_TYPE_SINT64:
+		return toInt64(reflect.Indirect(val), fd)
+
+	case descriptor.FieldDescriptorProto_TYPE_FIXED32,
+		descriptor.FieldDescriptorProto_TYPE_UINT32:
+		return toUint32(reflect.Indirect(val), fd)
+
+	case descriptor.FieldDescriptorProto_TYPE_FIXED64,
+		descriptor.FieldDescriptorProto_TYPE_UINT64:
+		return toUint64(reflect.Indirect(val), fd)
+
+	case descriptor.FieldDescriptorProto_TYPE_FLOAT:
+		return toFloat32(reflect.Indirect(val), fd)
+
+	case descriptor.FieldDescriptorProto_TYPE_DOUBLE:
+		return toFloat64(reflect.Indirect(val), fd)
+
+	case descriptor.FieldDescriptorProto_TYPE_BOOL:
+		return toBool(reflect.Indirect(val), fd)
+
+	case descriptor.FieldDescriptorProto_TYPE_BYTES:
+		return toBytes(reflect.Indirect(val), fd)
+
+	case descriptor.FieldDescriptorProto_TYPE_STRING:
+		return toString(reflect.Indirect(val), fd)
+
+	case descriptor.FieldDescriptorProto_TYPE_MESSAGE,
+		descriptor.FieldDescriptorProto_TYPE_GROUP:
+		return val, nil
+		// todo unsafe mark
+		//m, err := asMessage(val, fd.GetFullyQualifiedName())
+		//// check that message is correct type
+		//if err != nil {
+		//	return nil, err
+		//}
+		//var msgType string
+		//if dm, ok := m.(*Message); ok {
+		//	if allowNilMessage && dm == nil {
+		//		// if dm == nil, we'll panic below, so early out if that is allowed
+		//		// (only allowed for map values, to indicate an entry w/ no value)
+		//		return m, nil
+		//	}
+		//	msgType = dm.GetMessageDescriptor().GetFullyQualifiedName()
+		//} else {
+		//	msgType = proto.MessageName(m)
+		//}
+		//if msgType != fd.GetMessageType().GetFullyQualifiedName() {
+		//	return nil, fmt.Errorf("message field %s requires value of type %s; received %s", fd.GetFullyQualifiedName(), fd.GetMessageType().GetFullyQualifiedName(), msgType)
+		//}
+		//return m, nil
+
+	default:
+		return nil, fmt.Errorf("unable to handle unrecognized field type: %v", fd.GetType())
+	}
 }
 
 func toInt32(v reflect.Value, fd *desc.FieldDescriptor) (int32, error) {
