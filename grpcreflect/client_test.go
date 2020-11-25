@@ -1,7 +1,6 @@
 package grpcreflect
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -26,49 +25,6 @@ import (
 )
 
 var client *Client
-
-type testA struct {
-	Val int64
-}
-
-func (t *testA) MarshalJSON() ([]byte, error) {
-	f, err := json.Marshal(t.Val)
-	var i interface{}
-	json.Unmarshal(f, &i)
-	fmt.Println(i)
-	return f, err
-}
-
-type testB struct {
-	A testA `json:"A"`
-}
-
-//func (t *testB) MarshalJSON() ([]byte, error) {
-//	buffer := bytes.NewBufferString("{\"A\":" + strconv.Itoa(int(t.A.Val)) + "}")
-//	return buffer.Bytes(), nil
-//}
-
-func (t *testB) UnmarshalJSON(b []byte) error {
-	var m map[string]interface{}
-	err := json.Unmarshal(b, &m)
-	fmt.Println(err)
-	t.A.Val = int64(m["A"].(float64))
-	return err
-}
-
-func TestT(t *testing.T) {
-	b := testB{
-		A: testA{
-			Val: 10,
-		},
-	}
-	j, _ := json.Marshal(&b)
-	var a testB
-	err := json.Unmarshal(j, &a)
-	fmt.Println(b)
-	fmt.Println(a)
-	fmt.Println(err)
-}
 
 func TestMain(m *testing.M) {
 	code := 1

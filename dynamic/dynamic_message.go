@@ -84,6 +84,48 @@ type Message struct {
 	unknownFields map[int32][]UnknownField
 }
 
+// This is only for people who knows how to use it
+func (m *Message) GetFieldUnsafe(tag int32) interface{} {
+	return m.values[tag]
+}
+
+// This is only for people who knows how to use it
+func (m *Message) AddRepeatedFieldUnsafe(tag int32, val interface{}) {
+	if m.values == nil {
+		m.values = map[int32]interface{}{tag: []interface{}{val}}
+	} else {
+		slice := m.values[tag]
+		if slice == nil {
+			m.values[tag] = []interface{}{val}
+		} else {
+			m.values[tag] = append(slice.([]interface{}), val)
+		}
+	}
+}
+
+// This is only for people who knows how to use it
+func (m *Message) SetFieldUnsafe(tag int32, val interface{}) {
+	if m.values == nil {
+		m.values = map[int32]interface{}{tag: val}
+	} else {
+		m.values[tag] = val
+	}
+}
+
+// This is only for people who knows how to use it
+func (m *Message) PutMapFieldUnsafe(tag int32, key interface{}, val interface{}) {
+	if m.values == nil {
+		m.values = map[int32]interface{}{tag: map[interface{}]interface{}{key: val}}
+	} else {
+		mp := m.values[tag]
+		if mp == nil {
+			m.values[tag] = map[interface{}]interface{}{key: val}
+		} else {
+			mp.(map[interface{}]interface{})[key] = val
+		}
+	}
+}
+
 // UnknownField represents a field that was parsed from the binary wire
 // format for a message, but was not a recognized field number. Enough
 // information is preserved so that re-serializing the message won't lose
