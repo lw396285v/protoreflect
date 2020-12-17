@@ -91,6 +91,9 @@ func (m *Message) GetFieldUnsafe(tag int32) interface{} {
 
 // This is only for people who knows how to use it
 func (m *Message) AddRepeatedFieldUnsafe(tag int32, val interface{}) {
+	if val == nil {
+		return
+	}
 	if m.values == nil {
 		m.values = map[int32]interface{}{tag: []interface{}{val}}
 	} else {
@@ -105,6 +108,9 @@ func (m *Message) AddRepeatedFieldUnsafe(tag int32, val interface{}) {
 
 // This is only for people who knows how to use it
 func (m *Message) SetFieldUnsafe(tag int32, val interface{}) {
+	if val == nil {
+		return
+	}
 	if m.values == nil {
 		m.values = map[int32]interface{}{tag: val}
 	} else {
@@ -114,6 +120,9 @@ func (m *Message) SetFieldUnsafe(tag int32, val interface{}) {
 
 // This is only for people who knows how to use it
 func (m *Message) PutMapFieldUnsafe(tag int32, key interface{}, val interface{}) {
+	if key == nil || val == nil {
+		return
+	}
 	if m.values == nil {
 		m.values = map[int32]interface{}{tag: map[interface{}]interface{}{key: val}}
 	} else {
